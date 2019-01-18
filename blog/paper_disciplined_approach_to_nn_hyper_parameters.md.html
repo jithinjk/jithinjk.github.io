@@ -50,7 +50,7 @@ Introduction
 
 The Unreasonable Effectiveness Of Validation/Test Loss
 ====
-![Figure [fig1]: Comparing the training loss, validation accuracy, validation loss, and generalization error](images/leslie_hyperparams/fig1.PNG)
+![Figure [fig1]: Comparing the training loss, validation accuracy, validation loss, and generalization error](images/leslie_hyperparams/fig1.png)
 
 - Test loss provides valuable information. This architecture has the capacity to overfit and that early in the training a small LR will create overfitting.
 
@@ -58,7 +58,7 @@ The Unreasonable Effectiveness Of Validation/Test Loss
 
 The Underfitting And Overfitting Trade-off
 ----
-![Figure [fig2]: Tradeoff between underfitting and overfitting](images/leslie_hyperparams/fig2.PNG)
+![Figure [fig2]: Tradeoff between underfitting and overfitting](images/leslie_hyperparams/fig2.png)
 
 - Underfitting happens when the machine learning model is unable to reduce the error for either the test or training set. This is caused by an under capacity of the machine learning model; i.e., it is not powerful enough to fit the underlying complexities of the data distributions.
 - Overfitting happens when the machine learning model is so powerful as to fit the training set too well and the generalization error increases. The model fails to fit the test/validation set.
@@ -69,7 +69,7 @@ The Underfitting And Overfitting Trade-off
 
 Underfitting
 ----
-![Figure [fig3]: Continuously decreasing test loss, rather than a horizontal plateau is a characteristic of underfitting.](images/leslie_hyperparams/fig3.PNG)
+![Figure [fig3]: Continuously decreasing test loss, rather than a horizontal plateau is a characteristic of underfitting.](images/leslie_hyperparams/fig3.png)
 
 - Increasing the LR helps reduce underfitting.
 - *Figure 3(left)* shows how the test loss changes with different LRs. *Figure 3(right)* shows how underlying complexities of the data distribution can cause underfitting.
@@ -77,7 +77,7 @@ Underfitting
 
 Overfitting
 ----
-![Figure [fig4]: Increasing validation/test loss is a characteristic of overfitting](images/leslie_hyperparams/fig4.PNG)
+![Figure [fig4]: Increasing validation/test loss is a characteristic of overfitting](images/leslie_hyperparams/fig4.png)
 
 - More complicated than underfitting. Too small learning rates can exhibit some overfitting behavior. Increasing the learning rate helps reduce underfitting.
 - *Figure 4(left)* shows how the test loss changes with different values for weight decay(WD) learning rates. In *Figure 4(right)*, blue curve shows underfitting, while the red curve shows overfitting. This indicates that the hyper-parameter settings are non-optimal.
@@ -102,7 +102,7 @@ Brief review on how to use CLR:
     - a factor of 10 or 20 less than the maximum bound if only one cycle is used, 
     - a short test of hundreds of iterations with a few initial LRs and pick the largest one that allows convergence to begin without signs of overfitting
 
-![Figure [fig5]: Faster training by allowing the LR to become large and by reducing other regularization methods.](images/leslie_hyperparams/fig5.PNG)
+![Figure [fig5]: Faster training by allowing the LR to become large and by reducing other regularization methods.](images/leslie_hyperparams/fig5.png)
 
 - *Superconvergence*[#SmithTopin17] happens when the test loss and accuracy remain nearly constant for LR range test, even up to very large LR's. The network can be trained quickly with one LR cycle by using an unusually large LR. This provides twin benefits of regularization that prevented overfitting and faster training of the network. Figure 5 shows an example of super-convergence. See Figure 5 (left)
 - *1cycle learning rate policy* : always use one cycle that is smaller than the total number of iterations/epochs and allow the LR to decrease several orders of magnitude less than the initial LR for the remaining iterations (1cycle LR policy is a combination of curriculum learning [#Bengio09] and simulated annealing [#Aarts88])
@@ -112,7 +112,7 @@ Brief review on how to use CLR:
 
 Batch Size
 ----
-![Figure [fig6]: The effects of total batch size (TBS) on validation accuracy/loss](images/leslie_hyperparams/fig6.PNG)
+![Figure [fig6]: The effects of total batch size (TBS) on validation accuracy/loss](images/leslie_hyperparams/fig6.png)
 
 - When using 1cycle LR schedule use a large batch size, contrary to small batch sizes and optimal batch size recommended by [#Wilson03] and [#SmithLe17], respectively.
 
@@ -120,7 +120,7 @@ Batch Size
 
 Cyclical Momentum
 ----
-![Figure [fig7]: Cyclical momentum tests](images/leslie_hyperparams/fig7.PNG)
+![Figure [fig7]: Cyclical momentum tests](images/leslie_hyperparams/fig7.png)
 
 - Momentum and learning rate are dependent of each other.
 - Designed to accelerate network training but its effect on updating the weights is of the same magnitude as the LR
@@ -150,7 +150,7 @@ where $v$ is velocity and $\alpha$ is the momentum coefficient.
 
 Weight Decay
 ----
-![Figure [fig8]: weight decay search using a 3-layer network on the Cifar-10 dataset](images/leslie_hyperparams/fig9.PNG)
+![Figure [fig8]: weight decay search using a 3-layer network on the Cifar-10 dataset](images/leslie_hyperparams/fig9.png)
 - For WD, the best value should remain constant through the training. Test with 10e-3; 10e-4; 10e-5; and 0. 
 - Smaller datasets and architectures seem to require larger values for weight decay while larger datasets and deeper architectures seem to require smaller values. 
 - The author supposes that complex data provides its own regularization and other regularization should be reduced.
