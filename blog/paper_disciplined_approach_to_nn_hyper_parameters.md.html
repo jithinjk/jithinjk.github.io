@@ -1,0 +1,209 @@
+**Paper Review: A Disciplined Approach To Neural Network Hyper-Parameters: Part I - Learning Rate, Batch Size, Momentum, And Weight Decay**
+                           Jithin James
+                           January 16th, 2019
+                           [jithinjk.github.io](https://jithinjk.github.io)
+
+<style>
+.md .inverse svg.diagram {
+  background: #333;
+  stroke: #FFF;
+  fill: #FFF;
+}
+
+.md .inverse svg.diagram .opendot {
+  fill: #333;
+}
+</style>
+<div class="inverse">
+ ***************************************************************************
+ *  .---.                          .---.                                   *
+ *  |    |                         |    |                                  *
+ *  |    | --.  .--.   .-.  |.--   |    |  .-. \     / |  .-. \         /  *
+ *  '---'  .-.| |   | +---+ |      '---+  +---+ \   /  | +---+ \   +   /   *
+ *  |     |   | |   | |     |      |    | |      \ /   | |      \ / \ /    *
+ *  |      '-'' +--'   '--  '      |    |  '--    +    |  '--    +   +     *
+ *              |                                                          *
+ ***************************************************************************
+</div>
+
+In this paper review, we will dive into *[Leslie N. Smith's: A Disciplined Approach To Neural Network Hyper-Parameters: Part I - Learning Rate, Batch Size, Momentum, And Weight Decay](https://arxiv.org/abs/1803.09820)*. In this paper, the author discusses about how various neural network hyper-parameters and how they can be set with significant reduction in training time and performation improvement.
+
+I'll try to summarize important points from this paper.
+
+Code to replicate the results : [https://github.com/lnsmith54/hyperParam1](https://github.com/lnsmith54/hyperParam1)
+
+Abstract
+====
+- In this report, the author proposes several efficient ways to set the hyper-parameters that can significantly reduce training time and improve performance
+
+- Also, it explains how to examine the training validation/test loss function for subtle clues of underfitting and overfitting and suggest guidelines for moving toward the optimal balance point
+
+- We'll see how to increase/decrease the learning rate/momentum to speed up training
+
+- Finally, we'll see how weight decay is used as a sample regularizer to show how its optimal value is tightly coupled with the learning rates and momentum
+
+Introduction
+====
+- There is no simple and easy way to set hyper-parameters – specifically, *learning rate, batch size, momentum, and weight decay*. Practitioners often use grid search/random search[#Bergstra12] of the hyper-parameter space or often choose one of the standard architectures, like [#He16].
+
+- Additionaly, there is a tight coupling between *learning rate, momentum, and regularization* and optimal values must be determined together.
+
+The Unreasonable Effectiveness Of Validation/Test Loss
+====
+![Figure [fig1]: Comparing the training loss, validation accuracy, validation loss, and generalization error](images/leslie_hyperparams/fig1.png)
+
+- Test loss provides valuable information. This architecture has the capacity to overfit and that early in the training a small LR will create overfitting.
+
+**Remark 1.** The test/validation loss is a good indicator of the network’s convergence
+
+The Underfitting And Overfitting Trade-off
+----
+![Figure [fig2]: Tradeoff between underfitting and overfitting](images/leslie_hyperparams/fig2.png)
+
+- Underfitting happens when the machine learning model is unable to reduce the error for either the test or training set. This is caused by an under capacity of the machine learning model; i.e., it is not powerful enough to fit the underlying complexities of the data distributions.
+- Overfitting happens when the machine learning model is so powerful as to fit the training set too well and the generalization error increases. The model fails to fit the test/validation set.
+- This tradeoff is shown in Figure 2.
+- If we could catch these signs of underfitting or overfitting of the test or validation loss early in the training process, it can be useful for tuning the hyper-parameters.
+
+**Remark 2.** Achieving the horizontal part of the test loss is the goal of hyperparameter tuning
+
+Underfitting
+----
+![Figure [fig3]: Continuously decreasing test loss, rather than a horizontal plateau is a characteristic of underfitting.](images/leslie_hyperparams/fig3.png)
+
+- Increasing the LR helps reduce underfitting.
+- *Figure 3(left)* shows how the test loss changes with different LRs. *Figure 3(right)* shows how underlying complexities of the data distribution can cause underfitting.
+- The author suggests the LR range test for finding a good learning rate.[#Smith17]
+
+Overfitting
+----
+![Figure [fig4]: Increasing validation/test loss is a characteristic of overfitting](images/leslie_hyperparams/fig4.png)
+
+- More complicated than underfitting. Too small learning rates can exhibit some overfitting behavior. Increasing the learning rate helps reduce underfitting.
+- *Figure 4(left)* shows how the test loss changes with different values for weight decay(WD) learning rates. In *Figure 4(right)*, blue curve shows underfitting, while the red curve shows overfitting. This indicates that the hyper-parameter settings are non-optimal.
+
+> "The art of setting the network’s hyper-parameters amounts to ending up at the balance point between underfitting and overfitting"
+>     -- Leslie N. Smith
+
+Cyclical Learning Rates, Batch Sizes, Cyclical Momentum, And Weight Decay
+====
+Hyper-parameters are tightly coupled with each other, the data, and architecture.
+
+Cyclical Learning Rates And Super-convergence
+----
+We've seen that too small learning rate (LR) can cause overfitting. Large LRs help to regularize the training but if the LR is too large, the training will diverge. The author proposes Cyclical Learning Rates (CLR) and the learning rate range test (LR range test) [#Smith15] for choosing the learning rate.
+
+Brief review on how to use CLR:
+  - Specify a *min* and *max* LR boundaries and a *stepsize*. *Stepsize* is the number of iterations (or epochs) used for each step and a *cycle* consists of *two* such steps – one in which the LR linearly increases from the *min* to the *max* and the other in which it linearly decreases.
+  - In the LR range test, training starts with a small LR which is slowly increased linearly throughout a pre-training run. This run provides information on how well the network can be trained over a range of LRs and what is the *max LR*.
+  - Starting with a small LR, the network begins to converge and, as the LR increases, it eventually becomes too large and causes the test/validation loss to increase and the accuracy to decrease. The LR at this extrema is the largest value that can be used as the LR for the maximum bound with cyclical LRs but a smaller value will be necessary when choosing a constant LR or the network will not begin to converge.
+  - Ways to choose the minimum learning rate bound:
+    - a factor of 3 or 4 less than the maximum bound, 
+    - a factor of 10 or 20 less than the maximum bound if only one cycle is used, 
+    - a short test of hundreds of iterations with a few initial LRs and pick the largest one that allows convergence to begin without signs of overfitting
+
+![Figure [fig5]: Faster training by allowing the LR to become large and by reducing other regularization methods.](images/leslie_hyperparams/fig5.png)
+
+- *Superconvergence*[#SmithTopin17] happens when the test loss and accuracy remain nearly constant for LR range test, even up to very large LR's. The network can be trained quickly with one LR cycle by using an unusually large LR. This provides twin benefits of regularization that prevented overfitting and faster training of the network. Figure 5 shows an example of super-convergence. See Figure 5 (left)
+- *1cycle learning rate policy* : always use one cycle that is smaller than the total number of iterations/epochs and allow the LR to decrease several orders of magnitude less than the initial LR for the remaining iterations (1cycle LR policy is a combination of curriculum learning [#Bengio09] and simulated annealing [#Aarts88])
+- Regularization needs to be balanced and it is necessary to reduce other forms of regularization in order to utilize the regularization from large LRs and gain the other benefit - faster training. See Figure 5 (right)
+
+**Remark 3.** The amount of regularization must be balanced for each dataset and architecture
+
+Batch Size
+----
+![Figure [fig6]: The effects of total batch size (TBS) on validation accuracy/loss](images/leslie_hyperparams/fig6.png)
+
+- When using 1cycle LR schedule use a large batch size, contrary to small batch sizes and optimal batch size recommended by [#Wilson03] and [#SmithLe17], respectively.
+
+**Remark 4.** Goal: Obtain highest performance while minimizing computational time
+
+Cyclical Momentum
+----
+![Figure [fig7]: Cyclical momentum tests](images/leslie_hyperparams/fig7.png)
+
+- Momentum and learning rate are dependent of each other.
+- Designed to accelerate network training but its effect on updating the weights is of the same magnitude as the LR
+- Stochastic Gradient Descent (SGD) with momentum. Weights are updated using negative gradient. See eqn. [linear1]:
+\begin{equation}
+\label{linear1}
+\theta_{iter+1} = \theta_{iter} - \epsilon \delta L(F(x,\theta),\theta)
+\end{equation}
+where $\theta$ represents all the network parameters, $\epsilon$ is the learning rate, and $\delta$ L(F(x, $\theta$); $\theta$) is the gradient.
+
+- The update rule with momentum is as follows. See eqn. [linear2] and eqn. [linear3]:
+\begin{equation}
+\label{linear2}
+v_{iter+1} = \alpha v_{iter} - \epsilon \delta L(F(x; \theta), \theta )
+\end{equation}
+\begin{equation}
+\label{linear3}
+\theta{iter+1} = \theta{iter} + v
+\end{equation}
+where $v$ is velocity and $\alpha$ is the momentum coefficient. 
+
+- Momentum has a similar impact on the weight updates as the LR and the velocity is a moving average of the gradient. Momentum range test is not useful for finding an optimal momentum.
+
+***- is cyclical momentum useful and if so, when?***
+
+**Remark 5.** Optimal momentum value(s) will improve network training
+
+Weight Decay
+----
+![Figure [fig8]: weight decay search using a 3-layer network on the Cifar-10 dataset](images/leslie_hyperparams/fig9.png)
+- For WD, the best value should remain constant through the training. Test with 10e-3; 10e-4; 10e-5; and 0. 
+- Smaller datasets and architectures seem to require larger values for weight decay while larger datasets and deeper architectures seem to require smaller values. 
+- The author supposes that complex data provides its own regularization and other regularization should be reduced.
+
+**Remark 6.** Value of WD is key knob to turn for tuning regularization against the regularization from an increasing LR.
+
+***- can the value for the weight decay, learning rate and momentum all be determined simultaneously?***
+
+Recipe For Finding A Good Set Of Hyper-Parameters With A Given Dataset And Architecture
+====
+![Figure [fig9]: Training resnet and inception arch. on the imagenet dataset with the standard LR policy (blue curve) versus a 1cycle policy that displays super-convergence](images/leslie_hyperparams/fig16.png)
+
+1. **Learning rate (LR):** Perform a LR range test to a "large" LR. The max LR depends on the architecture. Using the 1cycle LR policy with a maximum LR determined from an LR range test, a minimum LR as a tenth of the maximum appears to work well but other factors are relevant, such as the rate of LR increase.
+2. **Total batch size (TBS):** A large batch size works well but the magnitude is typically constrained by the GPU memory. In addition, small batch sizes add regularization while large batch sizes add less. Better to use a larger batch size so a larger LR can be used.
+3. **Momentum:** Short runs with momentum values of 0.99, 0.97, 0.95, and 0.9 will quickly show the best value for momentum. If using the 1cycle LR schedule, it is better to use a cyclical momentum (CM) that starts at this maximum momentum value and decreases with increasing LR to a value of 0.8 or 0.85. Using cyclical momentum along with the LR range test stabilizes the convergence when using large LR values more than a constant momentum does.
+4. **Weight decay (WD):** Requires a grid search to determine the proper magnitude but usually does not require more than one significant figure accuracy. Use your knowledge of the dataset and arch. to decide which values to test. For example, a more complex dataset requires less regularization so test smaller weight decay values, such as 10e-4; 10e-5; 10e-6; 0. A shallow architecture requires more regularization so test larger weight decay values, such as 10e-2; 10e-3; 10e-4.
+
+**Bibliography**
+====
+[#Aarts88]: Emile Aarts and Jan Korst. 1989. Simulated Annealing and Boltzmann Machines: a Stochastic Approach to Combinatorial Optimization and Neural Computing. John Wiley & Sons, Inc., New York, NY, USA.
+
+[#Bengio12]: Yoshua Bengio. Practical recommendations for gradient-based training of deep architectures. In Neural networks: Tricks of the trade, pp. 437–478. Springer, 2012.
+
+[#Bengio09]: Yoshua Bengio, Jerome Louradour, Ronan Collobert, and Jason Weston. Curriculum learning. In Proceedings of the 26th annual international conference on machine learning, pp. 41–48. ACM, 2009.
+
+[#Bergstra12]: James Bergstra and Yoshua Bengio. Random search for hyper-parameter optimization. Journal of Machine Learning Research, 13(Feb):281–305, 2012.
+
+[#Goodfellow16]: Ian Goodfellow, Yoshua Bengio and Aaron Courville. Deep learning, volume 1.MIT press Cambridge, 2016.
+
+[#He16]: Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 770–778, 2016.
+
+[#Kingma14]: Diederik Kingma and Jimmy Ba. Adam: A method for stochastic optimization. arXiv preprint, 2014.
+
+[#Kulacka17]: Jan Kukacka, Vladimir Golkov, and Daniel Cremers. Regularization for deep learning: A taxonomy. arXiv preprint, 2017.
+
+[#Orr03]: Genevieve B Orr and Klaus-Robert M¨uller. Neural networks: tricks of the trade. Springer, 2003.
+
+[#Smith15]: Leslie N Smith. No more pesky learning rate guessing games. arXiv preprint, 2015.
+
+[#Smith17]: Leslie N Smith. Cyclical learning rates for training neural networks. In Applications of Computer Vision (WACV), 2017 IEEE Winter Conference on, pp. 464–472. IEEE, 2017.
+
+[#SmithTopin17]: Leslie N Smith and Nicholay Topin. Super-convergence: Very fast training of residual networks using large learning rates. arXiv preprint, 2017.
+
+[#SmithLe17]: Samuel L Smith and Quoc V Le. Understanding generalization and stochastic gradient descent. arXiv preprint, 2017.
+
+[#SmithKindermansLe17]: Samuel L Smith, Pieter-Jan Kindermans, and Quoc V Le. Don’t decay the learning rate, increase the batch size. arXiv preprint, 2017.
+
+[#Srivastava14]: Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, and Ruslan Salakhutdinov. Dropout: A simple way to prevent neural networks from overfitting. The Journal of Machine Learning Research, 15(1):1929–1958, 2014.
+
+[#Szegedy17]: Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, and Alexander A Alemi. Inception-v4, inception-resnet and the impact of residual connections on learning. In AAAI, volume 4, pp. 12, 2017.
+
+[#Wilson03]: D Randall Wilson and Tony R Martinez. The general inefficiency of batch training for gradient descent learning. Neural Networks, 16(10):1429–1451, 2003.
+
+[#Xing18]: Chen Xing, Devansh Arpit, Christos Tsirigotis, and Yoshua Bengio. A walk with sgd. arXiv preprint, 2018.
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
