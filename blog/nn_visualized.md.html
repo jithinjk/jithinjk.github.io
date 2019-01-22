@@ -1,0 +1,147 @@
+**A Brief Walk Through Neural Network's Feature Visualisation**
+                           Jithin James
+                           January 19th, 2019
+                           [jithinjk.github.io/blog](https://jithinjk.github.io/blog)
+
+<style>
+.md .inverse svg.diagram {
+  background: #333;
+  stroke: #FFF;
+  fill: #FFF;
+}
+
+.md .inverse svg.diagram .opendot {
+  fill: #333;
+}
+</style>
+<div class="inverse">
+ ***************************************************************************
+ *  .---.                          .---.                                   *
+ *  |    |                         |    |                                  *
+ *  |    | --.  .--.   .-.  |.--   |    |  .-. \     / .  .-. \         /  *
+ *  '---'  .-.| |   | +---+ |      '---+  +---+ \   /  | +---+ \   +   /   *
+ *  |     |   | |   | |     |      |    | |      \ /   | |      \ / \ /    *
+ *  |      '-'' +--'   '--  '      |    |  '--    +    |  '--    +   +     *
+ *              |                                                          *
+ ***************************************************************************
+</div>
+
+In this paper review, we will dive into following two papers on feature visualizaion for neural networks:
+- *[Zeiler and Fergus: Visualizing and Understanding Convolutional Networks](https://arxiv.org/abs/1311.2901)*
+- *[Yosinki et. al.: Understanding Neural Networks Through Deep Visualization](https://arxiv.org/abs/1506.06579)*
+
+Some of the factors that lead to a renewed interest in CNN based models are: 1) availability of large training sets, 2) powerful GPUs, and, 3) better regularization strategies
+
+In this review, we'll see several visualisations and try to understand CNN feature activations.
+
+- - -
+
+Visualizing and Understanding CNNs [#Zeiler13]
+====
+In this first paper, [#Zeiler13] proposes a visualization technique that uses a multi-layered Deconvolutional Network (deconvnet), as proposed by [#Zeiler11], to project the feature activations back to the input pixel space.
+
+In this method, we can see what input pattern caused a given activation in the feature maps using a deconvnet. A deconvnet can be thought of as a convnet model that uses the same components (filtering, pooling) but in reverse(mapping features to pixels).
+
+![Figure [fig1]: Feature visualization layer 1 and 2. Source: [#Zeiler13]](images/loss_visualize/12.png)
+
+In the above figure, in Layer 1, we can find groups of pixels that have lines in different directions, gradients that go from yellow to blue, etc. This is achieved using simple convolutional filters, which are simply matrices(square, in most cases). They are multiplied and slide across the entirety of an image to find these patterns.
+
+Following Layer 1 , the next layer takes the results of previous layer filter activations and does another round of computation. Layer 2 learns about curves, and circles, etc. In each layer, this representation/dimensionality increases to represent more and more features.
+
+![Figure [fig2]: Feature visualization layer 3. Source: [#Zeiler13]](images/loss_visualize/3.png)
+
+In the above figure, we can interesting patterns objects/persons. Again, Layer 3 builds up on bottom layer features to learn other representations.
+
+![Figure [fig3]: Feature visualization layer 4 and 5. Source: [#Zeiler13]](images/loss_visualize/45.png)
+
+Going forward, Layer 4 combines them together and can recognize dog faces, tyres, round objects, etc. By layer 5, we got features that identifies faces, cycles, sign labels, etc. 
+
+- It is important to fine-tune an existing model to make it work on a different task. In normal cases, you could just remove the head of your convnet and train with additional data from your problem domain. This is OK if your task resembles the pretrained model dataset. Otherwise, you'll need to freeze/unfreeze upto previous layers. This helps you to keep only such weights that generalizes wel to your problem dataset.
+
+- Consider a model trained on animal dataset. This model might not generalize well if used as a base model for other domains, such as vehicle classification. What you could do is try different iterations unfreezing each layers and checking the accuracy to determine where the model performs better.
+
+Understanding NNs Through Deep Visualization [#Yosinki15]
+====
+Jason Yosinski et. al [#Yosinki15] developed tools to visualize and interpret neural networks. The first tool visualizes the activations produced on each layer of a trained convnet as it processes an image or video. The second tool enables visualizing features at each layer of a DNN via regularized optimization in image space. 
+
+Tools are open-source and avaliable at [http://yosinski.com/deepvis](http://yosinski.com/deepvis).
+
+![Figure [fig:4]: deepvis tool. Source: http://yosinski.com/deepvis](https://youtu.be/AgkfIQ4IGaM)
+
+Intuitions gained from results
+----
+
+- Local representations
+- Direct file inputs are often correct and highly confident. On the other hand, when using input from a webcam, predictions often cannot be correct because no items from the training set are shown in the image. However, the probability vector is noisy and changes in the input can vary this significantly, due to noise.
+- Lower layer computations are much more robust.
+
+![Figure [fig:5]: deepvis tool. Source: http://yosinski.com/deepvis](images/loss_visualize/yos_bus_wheel_unit.jpg)
+
+**Regularized Optimization**
+----
+
+The authors proposed several regularization methods to bias images found via optimization toward more visually interpretable examples. These are called "natural image priors" or "regularization". The optimization problem is to find an image $x^\ast$ where
+
+\begin{equation}
+\label{linear1}
+x^\ast = \underset{x}{\arg\max} (a_i(x) - R_{\theta}(x))
+\end{equation}
+
+where $x$ is an image $x\epsilon \Bbb R^{C \times H \times W}$, where C = 3
+color channels and the height (H) and width (W). The neural network causes an an activation $a_i(x)$ for some unit i, where i is an index that runs over all units on all layers. We use a parameterized regularization function $R_{\theta}(x)$ that penalizes iamges in following ways:
+
+- $L_2$ **decay**
+  + L2 decay penalizes large values and is implemented as $r_\theta(x) = (1 - \theta_{decay})\cdot x$. It tends to prevent a small number of extreme pixel values from dominating the example image.
+- **Gaussian blur**
+  + Images produced images via gradient ascent tends to produce examples with high frequency information, which are neither realistic nor interpretable. Thus, we use a regularization methos which penalizes high frequency information and this is implemented as a Gaussian blur step $r_\theta(x) =
+GaussianBlur(x; \theta_{b\_width})$.
+- **Clipping pixels with small norm**
+  + $x\ast$ will contain non-zero pixel values everywhere. To bias away and instead show the main object, the authors use an $r_{\theta}(x)$ that computes the norm of each pixel (over three channels) and sets any pixels with small norm to zero. $\theta_{n_pct}$ is the threshold for the norm.
+- **Clipping pixels with small contribution**
+  + Instead of clipping like above, authors propose to clip pixels with small contributions to the activation. This can be computed by measuring how much the activation increases or decreases when the pixel is set to zero; that is, to compute the contribution as, $|a_i(x) - a_i(x_{-j})|$ where $x_{-j}$ is $x$ but with the $j^{th}$ pixel set to zero. Since this is a slow process, the authors propose an approximation of this process by linearizing $a_i(x)$ around $x$, where the contribution can be estimated as the elementwise product of $x$ and the gradient. Sum over all three channels and take the absolute value, computing $|\sum_c x \circ \Delta_x a_i(x)|$ to find pixels with small contribution. In this operation we are setting pixels with contribution under the $\theta_{c\_pct}$ percentile to zero.
+
+![Figure [fig:6]: All layers. Source: http://yosinski.com/deepvis](images/loss_visualize/deepvis_all_layers.jpg)
+
+From the above figure, you could easily see important features, such as edges, corners, wheels, eyes, faces, etc. Feature complexity and pattern variation increases in as we move higher up the layers as simpler features are combined from lower layers.
+
+- *The first tool revealed that feature representations on higher layers are somewhat local. During transfer learning a bias toward sparse $conv4$ or $conv5$ connectivity can be helpful, to combine features from these layers to create higher level features might be necessary.*
+- *The second tool suggests that the discriminative parameters contain significant "generative" structure from the training datase.*
+
+
+Wrapping Up
+====
+I hope that this paper review was helpful for you. If you think something's missing, feel free to refer to the original paper to clarify your doubts. 
+
+More blog posts could be found at [https://jithinjk.github.io/blog](https://jithinjk.github.io/blog)
+
+**Bibliography**
+====
+
+[#Anh14]: Nguyen, Anh, Yosinski, Jason, and Clune, Jeff. Deep Neural Networks are Easily Fooled: High Confidence Predictions for Unrecognizable Images. ArXiv e-prints, December 2014.
+
+[#Dumitru09]: Erhan, Dumitru, Bengio, Yoshua, Courville, Aaron, and Vincent, Pascal. Visualizing higher-layer features of a deep network. Technical report, University of Montreal, 2009.
+
+[#Erhan09]: Erhan, D., Bengio, Y., Courville, A., and Vincent, P. Visualizing higher-layer features of a deep network. In Technical report, University of Montreal, 2009.
+
+[#Feifei06]: Fei-fei, L., Fergus, R., and Perona, P. One-shot learning of object categories. IEEE Trans. PAMI, 2006.
+
+[#Hannun14]: Hannun, A., Case, C., Casper, J., Catanzaro, B., Diamos, G., Elsen, E., Prenger, R., Satheesh, S., Sengupta, S., Coates, A., and Ng, A. Y. Deep Speech: Scaling up end-to-end speech recognition. ArXiv e-prints, December 2014.
+
+[#Hinton06]: Hinton, G. E., Osindero, S., and The, Y. A fast learning algorithm for deep belief nets. Neural Computation, 18:1527{1554, 2006.
+
+[#Hinton12]: Hinton, Geoffrey E, Srivastava, Nitish, Krizhevsky, Alex, Sutskever, Ilya, and Salakhutdinov, Ruslan R. Improving neural networks by preventing co-adaptation of feature detectors. arXiv preprint arXiv:1207.0580, 2012.
+
+[#Krizhevsky12]: Krizhevsky, Alex, Sutskever, Ilya, and Hinton, Geoff. Imagenet classification with deep convolutional neural networks. In Advances in Neural Information Processing Systems 25, pp. 1106–1114, 2012.
+
+[#Nguyen14]: Nguyen, Anh, Yosinski, Jason, and Clune, Jeff. Deep Neural Networks are Easily Fooled: High Confidence Predictions for Unrecognizable Images. ArXiv e-prints, December 2014.
+
+[#Yosinki14]: Yosinski, J., Clune, J., Bengio, Y., and Lipson, H. How transferable are features in deep neural networks? In Ghahramani, Z., Welling, M., Cortes, C., Lawrence, N.D., and Weinberger, K.Q. (eds.), Advances in Neural Information Processing Systems 27, pp. 3320–3328. Curran Associates, Inc., December 2014.
+
+[#Yosinki15]: Understanding Neural Networks Through Deep Visualization. [arXiv:1506.06579](https://arxiv.org/abs/1506.06579)
+
+[#Zeiler11]: Zeiler, M., Taylor, G., and Fergus, R. Adaptive deconvolutional
+networks for mid and high level feature learning. In ICCV, 2011.
+
+[#Zeiler13]: Zeiler, Matthew D and Fergus, Rob. Visualizing and understanding convolutional neural networks. arXiv preprint arXiv:1311.2901, 2013.
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

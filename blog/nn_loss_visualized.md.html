@@ -1,0 +1,182 @@
+**A Brief Walk Through Neural Network's Loss Visualisation**
+                           Jithin James
+                           January 21st, 2019
+                           [jithinjk.github.io/blog](https://jithinjk.github.io/blog)
+
+<style>
+.md .inverse svg.diagram {
+  background: #333;
+  stroke: #FFF;
+  fill: #FFF;
+}
+
+.md .inverse svg.diagram .opendot {
+  fill: #333;
+}
+</style>
+<div class="inverse">
+ ***************************************************************************
+ *  .---.                          .---.                                   *
+ *  |    |                         |    |                                  *
+ *  |    | --.  .--.   .-.  |.--   |    |  .-. \     / .  .-. \         /  *
+ *  '---'  .-.| |   | +---+ |      '---+  +---+ \   /  | +---+ \   +   /   *
+ *  |     |   | |   | |     |      |    | |      \ /   | |      \ / \ /    *
+ *  |      '-'' +--'   '--  '      |    |  '--    +    |  '--    +   +     *
+ *              |                                                          *
+ ***************************************************************************
+</div>
+
+In this paper review, we will dive into *[Li et. al.'s: Visualizing the Loss Landscape of Neural Nets](https://arxiv.org/abs/1712.09913)*
+
+We'll look at a CNN loss landscape and its importance on training a neural network.
+
+The authors explored the structure of NN loss functions, and the effect of loss landscapes on generalization. They show a ***"filter normalization"*** method to visualize loss function curvature and made comparisons between loss functions. 
+
+Code and plots available at: [https://github.com/tomgoldstein/loss-landscape](https://github.com/tomgoldstein/loss-landscape)
+- - -
+
+Visualizations help us to answer important questions about why NNs work. Some of these questions include:
+- why are we able to minimize highly non-convex neural loss functions?
+- why do the resulting minima generalize?
+- how the non-convex structure of neural loss functions relates to their trainability, and,
+- how the geometry of neural minimizers (i.e., their sharpness/flatness, and their surrounding landscape), affects their generalization properties.
+
+Basics of Loss Visualisation
+====
+We already know that NNs are trained on a set of feature vectors(e.g. vision, text, tabular, etc.) and corresponding labels while trying to minimize a loss function of the form $L(\theta) = \frac{1}{m} \sum\limits_{i=1}^m l(x_i,y_i;\theta)$, where $\theta$ denotes the parameters or weights of the NN, the function $l(xi, yi; \theta)$ measures how well the NN with parameters $\theta$ predicts the correct label, and $m$ is the number of training samples. Due to size of the weights and high-dimensionality, it is difficult to visualise them. Existing methods include:
+
+- **1-Dimensional Linear Interpolation**:
+  + How To Plot:
+    * choose two sets of parameters $\theta$ and ${\theta}'$; plot the values of the loss function along the line connecting these two points; parameterize this line by choosing a scalar parameter $\alpha$; and defining the weighted average $\theta(\alpha) = (1-\alpha)\theta + \alpha{\theta}'$. Finally, we plot the function $f(\alpha) = L(\theta(\alpha))$.
+  + Weakness:
+    * Non-convexities in the data are difficult to visualize using 1D plots
+    * Batch normalization or invariance symmetries are not considered by this method.
+- **Contour Plots And Random Directions**:
+  + Hot to Plot:
+    * Choose a center point ${\theta}^\ast$ in the graph, and choose two direction vectors, $\delta$ and $\eta$. Plot a function of the form of eqn. [linear2] and eqn. [linear3]:
+  + Weakness:
+    * Result in low-resolution plots of small regions that have not captured the complex non-convexity of loss surfaces.
+\begin{equation}
+\label{linear2}
+f(\alpha) = L({\theta}^\ast + \alpha\delta), for\ 1D\ case
+\end{equation}
+\begin{equation}
+\label{linear3}
+f(\alpha, \beta) = L({\theta}^\ast + \alpha\delta + \beta\eta), for\ 2D\ case
+\end{equation}
+
+Filter-wise Normalization:
+====
+Scale invariance in network weights prevents random directions to capture the geometry of loss surfaces and cannot be used to compare the geometry of two different minimizers or networks. To remove this effect, loss functions can be plotted using ***filter-wise normalized directions***.
+
+![Figure [fig:7]: Loss surfaces of Resnet-56 with/without skip connections. Source: https://arxiv.org/pdf/1712.09913.pdf.](images/loss_visualize/loss_1.png)
+
+How do we do that:
+- For a network with parameters $\theta$, produce a random Gaussian direction vector $d$ with dimensions compatible with $\theta$.
+- Normalize each filter in $d$ to have the same norm of the corresponding filter in $\theta$.
+
+In other words, we make the following replacement, as shown in eqn. [linear4]:
+\begin{equation}
+\label{linear4}
+d_{i,j} \leftarrow \frac{d_{i,j}}{||d_{i,j}||} ||\theta_{i,j}||
+\end{equation}
+where $d_{i,j}$ represents the $j^{th}$ filter (not the $j^{th}$ weight) of the $i^{th}$ layer of $d$, and $||\cdot||$ denotes the Frobenius norm.
+
+Trainability of NNs & Further Insights on the (Non)Convexity of Loss Surfaces
+====
+![Figure [fig:8]: Loss surfaces of ResNet-110-noshort and DenseNet for CIFAR-10. Source: https://arxiv.org/pdf/1712.09913.pdf.](images/loss_visualize/loss_2.png)
+
+- Do loss functions have significant non-convexity at all?
+- If they do exist, why are they not problematic in all situations?
+- Why are some architectures easy to train, and why are results so sensitive to the initialization?
+
+Network Depth and Shortcut Connections
+----
+![Figure [fig:9]: 2D visualization of the loss surface of ResNet and ResNet-noshort with different depth. Source: https://arxiv.org/pdf/1712.09913.pdf.](images/loss_visualize/loss_g1.png)
+
+- Network depth effects the loss surfaces of NNs when skip connections are not used. As depth increases, the loss surface of networks transitions from (nearly) convex to chaotic.
+- Residual(shortcut) connections prevent this transition behavior as depth increases.
+
+Wide vs Thin Models
+----
+![Figure [fig:10]: Wide-ResNet-56 on CIFAR-10 both with shortcut connections (top) and without (bottom). k = 2 means twice as many filters per layer. Source: https://arxiv.org/pdf/1712.09913.pdf.](images/loss_visualize/loss_g2.png)
+
+- Wider models have loss landscapes with no noticeable chaotic behavior. They also have flat minima and wide regions of convexity.
+- Increased width prevents chaotic behavior, and skip connections widen minimizers. Sharpness correlates with test error.
+
+Network Initialization & Landscape Geometry
+----
+- As shown in fig. [fig:9], loss landscapes seem to be partitioned into a well-defined region of ***low loss value and convex contours***, surrounded by a well-defined region of ***high loss value and non-convex contours***. The authors suggest that this partitioning might indicate why good initialization strategies are important, and further explains why normalized random initialization strategies are better.
+- Also, landscape geometry too affects the generalization.
+- Flatter minimizers correspond to lower test error, which strengthens the filter normalization method.
+- Chaotic landscapes (deep NNs without skip connections) result in worse training and test error, while more convex landscapes have lower error values.
+
+Convexity
+----
+To measure the level of convexity, compute the ***principle curvatures***, which are eigenvalues of the Hessian. A truly ***convex*** function has ***non-negative curvatures*** (a positive semi-definite Hessian), ***non-convex*** function has ***negative curvatures***.
+
+This has some serious outcomes: 
+- Non-convexity in a dimensionality reduced plot means that non-convexity must be present in the full-dimensional surface. 
+- However, the opposite view that convexity in a low-dimensional surface does not mean that convexity is present in high-dimensional function. It might be that the positive curvatures (convexity) are dominant.
+
+Visualizing Optimization Paths
+====
+Why random directions fail?
+
+- Two random vectors in a high dimensional space will be nearly orthogonal with high probability.
+- In extremely low dimensional spaces, a randomly chosen vector will lie orthogonal to this space which contains the optimization path, and a projection onto a random direction will capture almost no variation.
+
+PCA Directions for Trajectory Plotting
+
+- Use non-random directions. PCA will measure the variation that has been captured.
+- How do we plot?
+  + Given $n$ training epochs, apply PCA to the matrix, $M = [\theta_0-\theta_n;...;\theta_{n-1}-\theta_n]$ and then select the two most explanatory directions, where $\theta_i$ is the model parameters at epoch $i$ and $\theta_n$ is the the final parameters after $n$ epochs of training.
+
+![Figure [fig:11]: Projected learning trajectories use normalized PCA directions for VGG-9. The left plot in each subfigure uses batch size 128, and the right one uses batch size 8192. Source: https://arxiv.org/pdf/1712.09913.pdf.](images/loss_visualize/loss_3.png)
+
+- From the above figure, we can see that the paths move perpendicular to the contours of the loss surface. The stochasticity becomes prominent during the later stages of training, especially when weight decay and small batches comes into play.
+- The path turns nearly parallel to the contours and "orbit" the solution when the stepsize is large. When the stepsize is dropped (red dot), effective noise decreases, and we see a kink(sharp twist) as the trajectory falls into the nearest local optima.
+- Low dimensionality of descent path: Observed that non-chaotic landscapes are influenced by wide, nearly convex minimizers, as we have seen in Section [Wide vs Thin Models].
+
+Conclusion
+====
+There are more comparisons and visualisations available in the Appendix section of the discussed paper. Please take a look to get a better understanding on how loss surfaces are affected by various hyperparameter settings.
+
+Wrapping Up
+====
+I hope that this paper review was helpful for you. If you think something's missing, feel free to refer to the original paper to clarify your doubts. 
+
+More blog posts could be found at [https://jithinjk.github.io/blog](https://jithinjk.github.io/blog)
+
+**Bibliography**
+====
+
+[#Choromanska15]: Anna Choromanska, Mikael Henaff, Michael Mathieu, Gérard Ben Arous, and Yann LeCun. The loss surfaces of multilayer networks. In AISTATS, 2015.
+
+[#Gallagher03]: Marcus Gallagher and Tom Downs. Visualization of learning in multilayer perceptron networks using principal component analysis. IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics), 33(1):28–34, 2003.
+
+[#Glorot10]: Xavier Glorot and Yoshua Bengio. Understanding the difficulty of training deep feedforward neural networks. In AISTATS, 2010.
+
+[#Goodfellow15]: Ian J Goodfellow, Oriol Vinyals, and Andrew M Saxe. Qualitatively characterizing neural network optimization problems. In ICLR, 2015.
+
+[#Goyal17]: Priya Goyal, Piotr Dollár, Ross Girshick, Pieter Noordhuis, Lukasz Wesolowski, Aapo Kyrola, Andrew Tulloch, Yangqing Jia, and Kaiming He. Accurate, large minibatch sgd: Training imagenet in 1 hour. arXiv preprint arXiv:1706.02677, 2017.
+
+[#Hardt17]: Moritz Hardt and Tengyu Ma. Identity matters in deep learning. In ICLR, 2017.
+
+[#He16]: Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep Residual Learning for Image Recognition. In CVPR, 2016.
+
+[#Huang17]: Gao Huang, Zhuang Liu, Kilian Q Weinberger, and Laurens van der Maaten. Densely connected convolutional networks. In CVPR, 2017.
+
+[#Im16]: Daniel Jiwoong Im, Michael Tao, and Kristin Branson. An empirical analysis of deep network loss surfaces. arXiv preprint arXiv:1612.04010, 2016.
+
+[#Ioffe15]: Sergey Ioffe and Christian Szegedy. Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. In ICML, 2015.
+
+[#Lorch16]: Eliana Lorch. Visualizing deep network training trajectories with pca. In ICML Workshop on Visualization for Deep Learning, 2016.
+
+[#Nguyen17]: Quynh Nguyen and Matthias Hein. The loss surface of deep and wide neural networks. In ICML, 2017.
+
+[#Simonyan15]: Karen Simonyan and Andrew Zisserman. Very Deep Convolutional Networks for Large-Scale Image Recognition. In ICLR, 2015.
+
+[#Smith17]: Leslie N Smith and Nicholay Topin. Exploring loss function topology with cyclical learning rates. arXiv preprint arXiv:1702.04283, 2017.
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

@@ -1,7 +1,7 @@
 **Paper Review: A Disciplined Approach To Neural Network Hyper-Parameters: Part I - Learning Rate, Batch Size, Momentum, And Weight Decay**
                            Jithin James
                            January 16th, 2019
-                           [jithinjk.github.io](https://jithinjk.github.io)
+                           [jithinjk.github.io/blog](https://jithinjk.github.io/blog)
 
 <style>
 .md .inverse svg.diagram {
@@ -167,6 +167,12 @@ Recipe For Finding A Good Set Of Hyper-Parameters With A Given Dataset And Archi
 2. **Total batch size (TBS):** A large batch size works well but the magnitude is typically constrained by the GPU memory. In addition, small batch sizes add regularization while large batch sizes add less. Better to use a larger batch size so a larger LR can be used.
 3. **Momentum:** Short runs with momentum values of 0.99, 0.97, 0.95, and 0.9 will quickly show the best value for momentum. If using the 1cycle LR schedule, it is better to use a cyclical momentum (CM) that starts at this maximum momentum value and decreases with increasing LR to a value of 0.8 or 0.85. Using cyclical momentum along with the LR range test stabilizes the convergence when using large LR values more than a constant momentum does.
 4. **Weight decay (WD):** Requires a grid search to determine the proper magnitude but usually does not require more than one significant figure accuracy. Use your knowledge of the dataset and arch. to decide which values to test. For example, a more complex dataset requires less regularization so test smaller weight decay values, such as 10e-4; 10e-5; 10e-6; 0. A shallow architecture requires more regularization so test larger weight decay values, such as 10e-2; 10e-3; 10e-4.
+
+Wrapping Up
+====
+I hope that this paper review was helpful for you. If you think something's missing, feel free to refer to the original paper to clarify your doubts. 
+
+More blog posts could be found at [https://jithinjk.github.io/blog](https://jithinjk.github.io/blog)
 
 **Bibliography**
 ====
